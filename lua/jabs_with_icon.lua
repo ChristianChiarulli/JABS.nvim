@@ -66,9 +66,11 @@ function M.setup(c)
 end
 
 M.bufinfo = {
+	-- ["%a"] = { "", "Constant" }, -- current active
 	["%a"] = { "", "Constant" }, -- current active
 	["#a"] = { "", "StatusLine" }, -- alternate buffer
 	["a"] = { "", "StatusLine" }, -- active
+	-- ["#h"] = { "", "WarningMsg" },
 	["#h"] = { "", "ModeMsg" }, -- alternate hidden
 	["h"] = { "﬘", "ModeMsg" }, -- hidden
 	["-"] = "",
@@ -182,6 +184,7 @@ function M.parseLs(buf)
 				end)
 
 				local _, symbol = xpcall(function()
+					-- print(M.bufinfo[s][1])
 					return M.bufinfo[s][1]
 				end, function()
 					return M.bufinfo[s:sub(s:len(), s:len())]
@@ -190,17 +193,50 @@ function M.parseLs(buf)
 				-- Fixes #3
 				symbol = symbol or M.bufinfo["h"][1]
 
+				-- use this if you want buffer number
+				-- line = "· " .. symbol .. " " .. line
+
+				-- with dot
+				-- line = "· " .. symbol .. " " .. " "
 				line = " " .. symbol .. " " .. line
+
 				-- Other non-empty splits (filename, RO, modified, ...)
 			else
 				if s:sub(2, 8) == "term://" then
 					line = line .. "Terminal" .. s:gsub("^.*:", ': "')
 				else
 					if tonumber(s) ~= nil and si > 2 then
-						linenr = s
+						linenr = s .. " "
 					else
 						if s:sub(1, 4) ~= "line" and s ~= "" then
-							line = line .. (M.bufinfo[s] or s):match("([^/]+)$") .. " "
+							-- TODO check if file already in list and if it is then use full path
+							-- local filename = (M.bufinfo[s] or s):match("([^/]+)$")
+							local filename = (M.bufinfo[s] or s)
+							local icon = " "
+
+							-- local extension = filename:match("^.+(%..+)$")
+							local extension = filename:match("^.+%.(.+)$")
+
+							-- print(extension)
+							-- print("lua")
+
+							local default = false
+
+							if extension == nil then
+								extension = " "
+								default = true
+							else
+								extension = extension:sub(1, -2)
+
+								-- line = line:gsub('"', "")
+							end
+
+							-- icon = require("nvim-web-devicons").get_icon(filename, extension, { default = default })
+							-- print(line)
+							-- line = line .. icon .. " " .. filename .. " "
+							line = line .. " " .. filename .. " "
+							-- line = line .. filename .. " "
+							-- print(line)
 						end
 					end
 				end
@@ -221,6 +257,8 @@ function M.parseLs(buf)
 		api.nvim_buf_set_text(buf, i, 1, i, line:len(), { line })
 		api.nvim_buf_set_text(buf, i, M.win_conf.width - linenr:len(), i, M.win_conf.width, { " " .. linenr })
 
+		-- print(highlight)
+		-- print(i)
 		api.nvim_buf_add_highlight(buf, -1, highlight, i, 0, -1)
 	end
 end
@@ -252,7 +290,7 @@ function M.setKeymaps(win, buf)
 	api.nvim_buf_set_keymap(
 		buf,
 		"n",
-		"d",
+		"D",
 		string.format([[:lua require'jabs'.closeBufNum(%s)<CR>]], win),
 		{ nowait = true, noremap = true, silent = true }
 	)
@@ -314,6 +352,7 @@ function M.refresh(buf)
 
 	-- Draw title
 	local title = "Buffers:"
+  print(vim.inspect(buf))
 	api.nvim_buf_set_text(buf, 0, 1, 0, title:len() + 1, { title })
 	api.nvim_buf_add_highlight(buf, -1, "Folded", 0, 0, -1)
 
@@ -324,6 +363,9 @@ end
 -- Floating buffer list
 function M.open()
 	M.bopen = api.nvim_exec(":ls", true):split("\n", true)
+	-- print(vim.inspect(M.bopen))
+	print(M.bopen[1])
+
 	local back_win = api.nvim_get_current_win()
 	-- Create the buffer for the window
 	if not M.main_buf and not M.main_win then
@@ -338,4 +380,3 @@ function M.open()
 end
 
 return M
-
