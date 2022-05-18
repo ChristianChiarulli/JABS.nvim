@@ -40,6 +40,9 @@ function M.setup(c)
 		border = c.preview.border or "double",
 		anchor = M.win_conf.anchor,
 		relative = c.preview.relative or "win",
+		row = 0,
+		col = 0,
+-- bufpos={100,10}
 	}
 
 	M.conf = {
@@ -259,7 +262,7 @@ function M.setKeymaps(win, buf)
 	api.nvim_buf_set_keymap(
 		buf,
 		"n",
-		"P",
+		"p",
 		string.format([[:lua require'jabs'.previewBuf()<CR>]], win),
 		{ nowait = true, noremap = true, silent = true }
 	)
