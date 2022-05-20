@@ -241,6 +241,13 @@ function M.setKeymaps(win, buf)
 	api.nvim_buf_set_keymap(
 		buf,
 		"n",
+		"l",
+		string.format([[:<C-U>lua require'jabs'.selBufNum(%s, 'window', vim.v.count)<CR>]], win),
+		{ nowait = true, noremap = true, silent = true }
+	)
+	api.nvim_buf_set_keymap(
+		buf,
+		"n",
 		"s",
 		string.format([[:<C-U>lua require'jabs'.selBufNum(%s, 'hsplit', vim.v.count)<CR>]], win),
 		{ nowait = true, noremap = true, silent = true }
