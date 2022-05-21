@@ -136,7 +136,7 @@ end
 -- Preview buffer
 function M.previewBuf()
 	local l = api.nvim_get_current_line()
-	local buf = l:split(" ", true)[4]
+	local buf = l:split(" ", true)[3]
 
 	-- Create the buffer for preview window
 	M.prev_win = api.nvim_open_win(tonumber(buf), 1, M.preview_conf)
@@ -145,7 +145,7 @@ end
 -- Close buffer from line
 function M.closeBufNum(win)
 	local l = api.nvim_get_current_line()
-	local buf = l:split(" ", true)[4]
+	local buf = l:split(" ", true)[3]
 
 	local current_buf = api.nvim_win_get_buf(win)
 	local jabs_buf = api.nvim_get_current_buf()
