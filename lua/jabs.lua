@@ -246,7 +246,7 @@ function M.parseLs(buf)
 				hl_group = hl_group .. "term"
         filename = "terminal"
 			else
-				hl_group = hl_group .. filename
+				hl_group = hl_group .. filename:gsub('%W','')
 			end
 		end
 
