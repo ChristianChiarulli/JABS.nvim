@@ -42,7 +42,7 @@ function M.setup(c)
 		relative = c.preview.relative or "win",
 		row = 0,
 		col = 0,
--- bufpos={100,10}
+		-- bufpos={100,10}
 	}
 
 	M.conf = {
@@ -69,7 +69,7 @@ function M.setup(c)
 end
 
 M.bufinfo = {
-	["%a"] = { "", "Constant" }, -- current active
+	["%a"] = { "", "Visual" }, -- current active
 	["#a"] = { "", "StatusLine" }, -- alternate buffer
 	["a"] = { "", "StatusLine" }, -- active
 	["#h"] = { "", "ModeMsg" }, -- alternate hidden
@@ -179,8 +179,10 @@ function M.parseLs(buf)
 			-- Split with buffer information
 			if si == 2 then
 				_, highlight = xpcall(function()
+					-- print(M.bufinfo[s][2])
 					return M.bufinfo[s][2]
 				end, function()
+					-- print(M.bufinfo[s:sub(1, s:len() - 1)][2])
 					return M.bufinfo[s:sub(1, s:len() - 1)][2]
 				end)
 
@@ -194,7 +196,10 @@ function M.parseLs(buf)
 				symbol = symbol or M.bufinfo["h"][1]
 
 				line = " " .. symbol .. " " .. line
+				-- print(vim.inspect(M.bufinfo[s]))
+				-- print(line)
 				-- Other non-empty splits (filename, RO, modified, ...)
+				-- print(s)
 			else
 				if s:sub(2, 8) == "term://" then
 					line = line .. "Terminal" .. s:gsub("^.*:", ': "')
@@ -203,7 +208,13 @@ function M.parseLs(buf)
 						linenr = s
 					else
 						if s:sub(1, 4) ~= "line" and s ~= "" then
-							line = line .. (M.bufinfo[s] or s):match("([^/]+)$") .. " "
+							-- print(s)
+							local cwd_path = vim.fn.getcwd() .. "/"
+							local bufinfo = string.gsub((M.bufinfo[s] or s), "~", os.getenv("HOME"))
+							local name = string.gsub(bufinfo, cwd_path, "")
+							-- name = " " .. file_icon .. " " .. name
+							line = line .. name .. " "
+							-- print(line)
 						end
 					end
 				end
@@ -213,6 +224,17 @@ function M.parseLs(buf)
 
 		-- Remove quotes from filename
 		line = line:gsub('"', "")
+    -- print(line[4])
+		local filename = line:match("([^/]+)$")
+    print(filename)
+		local extension = filename:match("^.+(%..+)$")
+    -- print(extension)
+		local default = true
+		local file_icon, file_icon_color = require("nvim-web-devicons").get_icon_color(
+			filename,
+			extension,
+			{ default = default }
+		)
 
 		-- Truncate line if too long
 		local filename_space = M.win_conf.width - linenr:len() - 3
