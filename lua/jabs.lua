@@ -118,7 +118,8 @@ function M.selBufNum(win, opt, count)
 		-- Or if it's just an ENTER
 	else
 		local l = api.nvim_get_current_line()
-		buf = l:split(" ", true)[4]
+		-- 4 without icon
+		buf = l:split(" ", true)[3]
 	end
 
 	M.close()
@@ -195,6 +196,7 @@ function M.parseLs(buf)
 				-- Fixes #3
 				symbol = symbol or M.bufinfo["h"][1]
 
+				-- line = " " .. symbol .. " " .. line
 				line = " " .. symbol .. " " .. line
 				-- print(vim.inspect(M.bufinfo[s]))
 				-- print(line)
@@ -224,17 +226,40 @@ function M.parseLs(buf)
 
 		-- Remove quotes from filename
 		line = line:gsub('"', "")
-    -- print(line[4])
-		local filename = line:match("([^/]+)$")
-    print(filename)
-		local extension = filename:match("^.+(%..+)$")
-    -- print(extension)
+
+		local chunks = {}
+		for substring in line:gmatch("%S+") do
+			table.insert(chunks, substring)
+		end
+
+
+		local filename = chunks[3]
+		local extension = ""
+		extension = filename:match("^.+(%..+)$")
 		local default = true
+		local hl_group = "FileIconColor"
+		if not (extension == nil or extension == " ") then
+			extension = extension:gsub("%.", "") -- remove . (. is a special character so we have to escape it)
+			hl_group = hl_group .. extension
+		else
+			if chunks[3] == "Terminal:" then
+				hl_group = hl_group .. "term"
+        filename = "terminal"
+			else
+				hl_group = hl_group .. filename
+			end
+		end
+
+
 		local file_icon, file_icon_color = require("nvim-web-devicons").get_icon_color(
 			filename,
 			extension,
 			{ default = default }
 		)
+
+		vim.api.nvim_set_hl(0, hl_group, { fg = file_icon_color })
+		table.insert(chunks, 3, file_icon)
+		line = table.concat(chunks, " ")
 
 		-- Truncate line if too long
 		local filename_space = M.win_conf.width - linenr:len() - 3
@@ -247,6 +272,7 @@ function M.parseLs(buf)
 		api.nvim_buf_set_text(buf, i, M.win_conf.width - linenr:len(), i, M.win_conf.width, { " " .. linenr })
 
 		api.nvim_buf_add_highlight(buf, -1, highlight, i, 0, -1)
+		api.nvim_buf_add_highlight(buf, -1, hl_group, i, 9, 11)
 	end
 end
 
